@@ -57,7 +57,7 @@ type twirp struct {
 	fileToGoPackageName map[*descriptor.FileDescriptorProto]string
 
 	// List of files that were inputs to the generator. We need to hold this in
-	// the struct so we can write a header for the file that lists its inputs.
+	// the struct, so we can write a header for the file that lists its inputs.
 	genFiles []*descriptor.FileDescriptorProto
 
 	// Output buffer that holds the bytes we want to write out for a single file.
@@ -117,7 +117,7 @@ func (t *twirp) Generate(in *plugin.CodeGeneratorRequest) *plugin.CodeGeneratorR
 	}
 	t.genPkgName = genPkgName
 
-	// We also need to figure out the fully import path of the package we're
+	// We also need to figure out the full import path of the package we're
 	// generating. It's possible to import proto definitions from different .proto
 	// files which will be generated into the same Go package, which we need to
 	// detect (and can only detect if files use fully-specified go_package
@@ -249,7 +249,7 @@ func (t *twirp) generate(file *descriptor.FileDescriptorProto) *plugin.CodeGener
 	return resp
 }
 
-func (t *twirp) generateVersionCheck(file *descriptor.FileDescriptorProto) {
+func (t *twirp) generateVersionCheck(_ *descriptor.FileDescriptorProto) {
 	t.P(`// Version compatibility assertion.`)
 	t.P(`// If the constant is not defined in the package, that likely means`)
 	t.P(`// the package needs to be updated to work with this generated code.`)
@@ -935,7 +935,7 @@ func (t *twirp) sectionComment(sectionTitle string) {
 	t.P()
 }
 
-func (t *twirp) generateService(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto, index int) {
+func (t *twirp) generateService(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto, _ int) {
 	servName := serviceNameCamelCased(service)
 
 	t.sectionComment(servName + ` Interface`)
@@ -1023,7 +1023,7 @@ func (t *twirp) generateClient(name string, file *descriptor.FileDescriptorProto
 		t.P(`  serviceURL := sanitizeBaseURL(baseURL)`)
 		if servNameLit == servNameCc {
 			t.P(`  serviceURL += baseServicePath(pathPrefix, "`, servPkg, `", "`, servNameCc, `")`)
-		} else { // proto service name is not CamelCased, then it needs to check client option to decide if needs to change case
+		} else { // proto service name is not CamelCased, then it needs to check client option to decide if it needs to change case
 			t.P(`  if literalURLs {`)
 			t.P(`    serviceURL += baseServicePath(pathPrefix, "`, servPkg, `", "`, servNameLit, `")`)
 			t.P(`  } else {`)
@@ -1516,7 +1516,7 @@ func (t *twirp) generateServiceMetadataAccessors(file *descriptor.FileDescriptor
 }
 
 func (t *twirp) generateFileDescriptor(file *descriptor.FileDescriptorProto) {
-	// Copied straight of of protoc-gen-go, which trims out comments.
+	// Copied straight of protoc-gen-go, which trims out comments.
 	pb := proto.Clone(file).(*descriptor.FileDescriptorProto)
 	pb.SourceCodeInfo = nil
 
@@ -1528,7 +1528,7 @@ func (t *twirp) generateFileDescriptor(file *descriptor.FileDescriptorProto) {
 	var buf bytes.Buffer
 	w, _ := gzip.NewWriterLevel(&buf, gzip.BestCompression)
 	_, _ = w.Write(b)
-	w.Close()
+	_ = w.Close()
 	b = buf.Bytes()
 
 	v := t.serviceMetadataVarName()
@@ -1601,7 +1601,7 @@ func (t *twirp) formattedOutput() string {
 		var src bytes.Buffer
 		s := bufio.NewScanner(bytes.NewReader(raw))
 		for line := 1; s.Scan(); line++ {
-			fmt.Fprintf(&src, "%5d\t%s\n", line, s.Bytes())
+			_, _ = fmt.Fprintf(&src, "%5d\t%s\n", line, s.Bytes())
 		}
 		gen.Fail("bad Go source code was generated:", err.Error(), "\n"+src.String())
 	}

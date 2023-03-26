@@ -108,6 +108,7 @@ func (t *twirp) Generate(in *plugin.CodeGeneratorRequest) *plugin.CodeGeneratorR
 	t.registerPackageName("url")
 	t.registerPackageName("fmt")
 	t.registerPackageName("errors")
+	t.registerPackageName("trace")
 
 	// Time to figure out package names of objects defined in protobuf. First,
 	// we'll figure out the name for the package we're generating.
@@ -296,6 +297,7 @@ func (t *twirp) generateImports(file *descriptor.FileDescriptorProto) {
 	t.P(`import `, t.pkgs["proto"], ` "google.golang.org/protobuf/proto"`)
 	t.P(`import `, t.pkgs["twirp"], ` "github.com/twitchtv/twirp"`)
 	t.P(`import `, t.pkgs["ctxsetters"], ` "github.com/twitchtv/twirp/ctxsetters"`)
+	t.P(`import `, t.pkgs["trace"], ` "github.com/arryved/simc/base/observe/trace"`)
 	t.P()
 
 	// It's legal to import a message and use it as an input or output for a
@@ -1416,7 +1418,10 @@ func (t *twirp) generateServerProtobufMethod(service *descriptor.ServiceDescript
 	t.P()
 	t.P(`  ctx = callResponsePrepared(ctx, s.hooks)`)
 	t.P()
-	t.P(`  respBytes, err := `, t.pkgs["proto"], `.Marshal(respContent)`)
+	t.P(`  _, span := trace.OpenSpan(ctx, "Marshal response")`)
+	t.P(`  var respBytes [] byte`)
+	t.P(`  respBytes, err = `, t.pkgs["proto"], `.Marshal(respContent)`)
+	t.P(`	span.Close()`)
 	t.P(`  if err != nil {`)
 	t.P(`    s.writeError(ctx, resp, wrapInternal(err, "failed to marshal proto response"))`)
 	t.P(`    return`)
